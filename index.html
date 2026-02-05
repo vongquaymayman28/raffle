@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quay Bốc Thăm Tất Niên</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(circle at top, #7f1d1d, #450a0a);
+      color: #fff7ed;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.08);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.45);
+      border: 2px solid rgba(250,204,21,0.3);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: clamp(22px, 4vw, 32px);
+      color: #fde047;
+    }
+
+    textarea, select {
+      width: 100%;
+      border-radius: 12px;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #fde047, #f59e0b);
+      color: #7c2d12;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      aspect-ratio: 1 / 1;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 25px solid #fde047;
+      z-index: 10;
+    }
+
+    .result {
+      text-align: center;
+      margin-top: 16px;
+      font-size: clamp(20px, 4vw, 28px);
+      font-weight: 800;
+      color: #fde047;
+    }
+
+    .history {
+      margin-top: 12px;
+      font-size: 14px;
+      max-height: 120px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 12px;
+    }
+    #fwCanvas {
+      position: fixed;
+      top: 100%;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+  </style>
+</head>
+
+<body>
+<div class="container" id="app">
+
+  <div class="panel">
+    <h1>🎉 Điều khiển (MC)</h1>
+
+    <label>Danh sách người tham gia</label>
+    <textarea id="names" rows="8" readonly></textarea>
+
+    <label>Chọn giải thưởng</label>
+    <select id="prize">
+      <option value="Giải Năm">🎀 Giải Năm</option>
+      <option value="Giải Tư">🎁 Giải Tư</option>
+      <option value="Giải Ba">🥉 Giải Ba</option>
+      <option value="Giải Nhì">🥈 Giải Nhì</option>
+      <option value="Giải Nhất">🥇 Giải Nhất</option>
+      <option value="Giải Đặc Biệt">🏆 Giải Đặc Biệt</option>
+    </select>
+
+    <button id="spinBtn">🎡 QUAY</button>
+
+    <div class="history" id="history"></div>
+  </div>
+
+  <div class="panel">
+    <h1>Vòng quay may mắn</h1>
+    <div class="wheel-wrapper">
+      <div class="pointer"></div>
+      <canvas id="wheel"></canvas>
+    </div>
+    <div class="result" id="result">—</div>    
+  </div>
+
+</div>
+
+<audio id="spinSound">
+  <source src="https://nhacchuong123.com/nhac-chuong/abcdef/Nhac-Chuong-xo-so-mien-bac.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="spinSoundSpec">
+  <source src="https://nhacchuong123.com/nhac-chuong/nhac-remix/ketquaxosodjremix.mp3" type="audio/mpeg">
+</audio>
+
+<canvas id="fireworks" style="position:fixed;inset:0;pointer-events:none;display:none;"></canvas>
+
+<script>
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const namesInput = document.getElementById('names');
+const resultEl = document.getElementById('result');
+const historyEl = document.getElementById('history');
+const prizeEl = document.getElementById('prize');
+const spinSound = document.getElementById('spinSound');
+const spinSoundSpec = document.getElementById('spinSoundSpec');
+const fwCanvas = document.getElementById('fireworks');
+const fwCtx = fwCanvas.getContext('2d');
+
+namesInput.value = 
+// `01
+// 02
+// Nguyễn Thị Thanh
+// 04
+// 05
+// 06
+// 07
+// 08
+// 09
+// 10
+// 11
+// 12
+// Nguyễn Thị Giang
+// 14
+// 15
+// Hoàng Thanh Tú
+// 17
+// 18
+// 19
+// 20
+// 21
+// 22
+// 23
+// 24
+// 25`;
+`Bùi Bích Liên
+Bùi Thế Sáng
+Đàm Thị Thu Thủy
+Đàm Trọng Tùng
+Đặng Văn Giáp
+Đặng Văn Hoàn
+Đỗ Công Sơn
+Dương Văn Đô
+Giáp Văn Nghiệp
+Hoàng Lê Lương
+Hoàng Thanh Tú
+Hoàng Thị Thanh Vân
+Hoàng Văn Hiến
+Hoàng Văn Quang
+Hoàng Văn Việt
+Kiều Phi Hùng
+Lã Thị Phương Thanh
+Lã Tuấn Anh
+Lê Hồng Phong
+Lê Sỹ Tin
+Lê Thu Huyền
+Lê Văn Cường
+Lê Xuân Cần
+Lê Xuân Phúc
+Lưu Văn Xuân
+Ngô Trương Tạo
+Nguyễn Đăng Thìn
+Nguyễn Duy Anh
+Nguyễn Duy Đàn
+Nguyễn Hồng Hiếu
+Nguyễn Hữu Diện
+Nguyễn Hữu Doãn
+Nguyễn Hữu Hoằng
+Nguyễn Hữu Toản
+Nguyễn Khắc Toản
+Nguyễn Kiên Cường
+Nguyễn Mạnh Huân
+Nguyễn Minh Đồng
+Nguyễn Quang Huy
+Nguyễn Quang Thịnh
+Nguyễn Thanh Nam
+Nguyễn Thị Giang
+Nguyễn Thị Hà
+Nguyễn Thị Hồng Anh
+Nguyễn Thị Ngọc Lan
+Nguyễn Thị Nguyệt Hà
+Nguyễn Thị Phượng
+Nguyễn Thị Thanh
+Nguyễn Thị Thu Hằng
+Nguyễn Thị Thúy Hằng
+Nguyễn Thị Yến
+Nguyễn Thu Hằng
+Nguyễn Thu Vân
+Nguyễn Tiến Tưởng
+Nguyễn Trung Sơn
+Nguyễn Tuấn Anh
+Nguyễn Tuấn Đàn
+Nguyễn Văn Chinh
+Nguyễn Văn Đức
+Nguyễn Văn Hiếu
+Nguyễn Văn Hòa
+Nguyễn Văn Hợp
+Nguyễn Văn Minh
+Nguyễn Văn Quang
+Nguyễn Văn Thăng
+Nguyễn Việt Bắc
+Phạm Hồng Thanh
+Phạm Thị Hà
+Phan Minh Lễ
+Tạ Trung Kiên
+Trần Công Bắc
+Trần Đức Long
+Trần Huy Võ
+Trần Quang Hiệu
+Trần Quang Hưng
+Trần Trung Dũng
+Triệu Văn Thắng
+Trịnh Ngọc Phương Anh
+Vũ Đình Khang
+Vũ Xuân Giáp`;
+
+let names = [];
+let winners = [];
+let angle = 0;
+let spinning = false;
+let hasData = false; // có dữ liệu quay chưa
+
+// ===== CẤU HÌNH SỐ LƯỢNG GIẢI =====
+const PRIZE_LIMITS = {
+  'Giải Đặc Biệt': 1,
+  'Giải Nhất': 2,
+  'Giải Nhì': 2,
+  'Giải Ba': 3,
+  'Giải Tư': 3,
+  'Giải Năm': 5
+};
+
+const RESERVED_NAMES = [
+  'Nguyễn Thị Giang',
+  'Nguyễn Thị Thanh',
+  'Hoàng Thanh Tú'
+];
+
+const prizeCount = {};
+Object.keys(PRIZE_LIMITS).forEach(p => prizeCount[p] = 0);
+
+
+function resizeCanvas() {
+  const size = canvas.parentElement.clientWidth;
+  canvas.width = size * 2;
+  canvas.height = size * 2;
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function drawWheel() {
+  const size = canvas.width / 2;
+  const radius = size / 2 - 10;
+  const cx = size / 2;
+  const cy = size / 2;
+  const COLOR_PALETTE = [
+    '#ef4444', // đỏ
+    '#3b82f6', // xanh dương
+    '#22c55e', // xanh lá
+    '#f59e0b', // cam
+    '#a855f7', // tím
+    '#06b6d4', // cyan
+    '#e11d48', // hồng đậm
+    '#84cc16', // lime
+    '#f97316', // cam đậm
+    '#0ea5e9', // sky
+    '#8b5cf6', // violet
+    '#14b8a6', // teal
+    ];
+  
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!names.length) return;
+
+  const slice = (2 * Math.PI) / names.length;
+
+  names.forEach((name, i) => {
+    const start = angle + i * slice;
+    const end = start + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    // ctx.fillStyle = `hsl(${i * 360 / names.length}, 90%, 55%)`;
+    ctx.fillStyle = COLOR_PALETTE[i % COLOR_PALETTE.length];
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#451a03';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(name, radius - 10, 5);
+    ctx.restore();
+  });
+}
+
+function getRandomTargetAvoiding(names, avoidNames, startAngle) {
+  const slice = (2 * Math.PI) / names.length;
+
+  while (true) {
+    const randIndex = Math.floor(Math.random() * names.length);
+    const name = names[randIndex];
+
+    if (avoidNames.includes(name)){
+      console.log('spin again...');
+      continue;
+    } 
+
+    const sliceCenter = randIndex * slice + slice / 2;
+    const spins = 10;
+
+    return (
+      angle +
+      spins * 2 * Math.PI +
+      (2 * Math.PI - (startAngle % (2 * Math.PI)) - sliceCenter - Math.PI / 2)
+    );
+  }
+}
+
+
+function spin() {
+  if (spinning) return;
+  let prize = prizeEl.value;
+
+  if (prizeCount[prize] >= PRIZE_LIMITS[prize]) {
+    alert(`❌ ${prize} đã quay đủ ${PRIZE_LIMITS[prize]} người rồi!`);
+    return;
+  }
+
+  names = namesInput.value
+    .split('\n')
+    .map(n => n.trim())
+    .filter(n => n && !winners.includes(n));
+  
+   // drawWheel();
+
+  if (!names.length) {
+    alert('Không còn người để quay');
+    return;
+  }
+
+  spinning = true;
+  spinBtn.disabled = true;
+  resultEl.textContent = 'Đang quay...';
+  document.querySelector('#app > div:nth-child(1)').style.display = 'none';
+  if (prize === "Giải Đặc Biệt") {
+    spinSound.pause();
+    spinSoundSpec.currentTime = 0;
+    spinSoundSpec.play();
+  }
+  else {
+    spinSoundSpec.pause();
+    spinSound.currentTime = 0;
+    spinSound.play();
+  }
+
+  let spinTime = 0;
+  if (prize === "Giải Đặc Biệt") {
+     spinTime = 12000 + Math.random() * 2000; // 10–12 giây
+  }
+  else 
+  {
+    spinTime = 4000 + Math.random() * 2000;
+  }
+  const start = performance.now();
+  angle = 0;
+  const startAngle = angle;
+  // const startAngle = angle % (2 * Math.PI);
+
+  //const target = startAngle + Math.PI * 10 + Math.random() * Math.PI * 2;
+
+  // ===== CHỈ ĐỊNH NGƯỜI TRÚNG =====
+  const forcedNameSpec = 'Nguyễn Thị Giang'; // hoặc null nếu quay random
+  const forcedName1 = 'Hoàng Thanh Tú'; // hoặc null nếu quay random
+  const forcedName2 = 'Nguyễn Thị Thanh'; // hoặc null nếu quay random
+  let target=0;
+  let targetSpec=0;
+  let target1=0;
+  let target2=0;
+
+  try {
+    if (forcedNameSpec && names.includes(forcedNameSpec)) {
+      const index = names.indexOf(forcedNameSpec);
+      const slice = (2 * Math.PI) / names.length;
+      const sliceCenter = index * slice + slice / 2;
+      const spins = 10;
+
+      targetSpec = startAngle +  spins * 2 * Math.PI +  (2 * Math.PI - sliceCenter - Math.PI / 2);
+    }
+
+    if (forcedName1 && names.includes(forcedName1)) {
+      const index = names.indexOf(forcedName1);
+      const slice = (2 * Math.PI) / names.length;
+      const sliceCenter = index * slice + slice / 2;
+      const spins = 10;
+
+      target1 = startAngle +  spins * 2 * Math.PI +  (2 * Math.PI - sliceCenter - Math.PI / 2);
+    }
+
+    if (forcedName2 && names.includes(forcedName2)) {
+      const index = names.indexOf(forcedName2);
+      const slice = (2 * Math.PI) / names.length;
+      const sliceCenter = index * slice + slice / 2;
+      const spins = 10;
+
+      target2 = startAngle +  spins * 2 * Math.PI +  (2 * Math.PI - sliceCenter - Math.PI / 2);
+    }
+    let next = true;
+    if (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 1) {
+        target = target2;
+    }
+    else if (prize === "Giải Nhất" && prizeCount["Giải Nhất"] === 0) {
+      target = target1;
+    }
+    else if (prize === "Giải Đặc Biệt" && prizeCount["Giải Đặc Biệt"] === 0) {
+      target = targetSpec;
+    }
+    else 
+    //if  (prize === "Giải Năm" || prize === "Giải Tư" || prize === "Giải Ba" || (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 0))
+    {
+      // quay random bình thường
+      // target =  startAngle +  Math.PI * 10 +  Math.random() * Math.PI * 2;   
+      target = getRandomTargetAvoiding(names,RESERVED_NAMES.filter(n => !winners.includes(n)),startAngle);
+    }
+    
+  } catch (error) {
+    console.log(error);
+  }
+
+  
+
+
+  function animate(now) {
+    
+    const progress = Math.min((now - start) / spinTime, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    angle = startAngle + (target - startAngle) * ease;
+    drawWheel();
+    if (progress < 1){
+      requestAnimationFrame(animate);
+    }
+    else {
+      finish();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+/* ================= FIX CHUẨN MŨI TÊN ================= */
+function finish() {
+  const slice = (2 * Math.PI) / names.length;
+
+  // BÙ GÓC MŨI TÊN (12 GIỜ = -PI/2)
+  const correctedAngle =  (2 * Math.PI - ((angle + Math.PI / 2) % (2 * Math.PI))) % (2 * Math.PI);
+
+  const index = Math.floor(correctedAngle / slice);
+  //const winnerIndex = Math.floor(Math.random() * names.length);
+  const winner = names[index];
+
+  const prize = prizeEl.value;
+    prizeCount[prize]++;
+
+    // Nếu quay đủ → khóa giải này
+    if (prizeCount[prize] >= PRIZE_LIMITS[prize]) {
+    const option = [...prizeEl.options].find(o => o.value === prize);
+    if (option) option.disabled = true;
+    }
+  
+  winners.push(winner);
+  hasData = true; // đã có dữ liệu quay
+  resultEl.innerHTML = `<span style="font-size: 30px;">🎁 ${prize}: </span> </br> <span style="font-size: 45px;">${winner}</span>`;
+  historyEl.innerHTML += `<div>${prize} – <b>${winner}</b></div>`;
+
+  launchTextFireworks(winner);
+        // Giữ chữ 2 giây rồi mới nổ
+  setTimeout(() => {
+      document.querySelector('#app > div:nth-child(1)').style.display = 'block';
+  }, 6000);
+
+  spinning = false;
+  spinBtn.disabled = false;
+}
+
+spinBtn.addEventListener('click', spin);
+drawWheel();
+
+window.addEventListener('beforeunload', function (e) {
+  if (!hasData) return;
+
+  e.preventDefault();
+  e.returnValue = 'Nếu reload trang, toàn bộ kết quả quay thưởng sẽ bị mất. Bạn có chắc không?';
+});
+
+  function launchTextFireworks(text) {
+  fwCanvas.style.display = 'block';
+  //fwCanvas.style.left = '-200px'; // dịch sang trái 100px
+  //fwCanvas.style.top = '-200px'; // dịch sang trái 100px
+
+  // ===== FIX 1: SCALE CANVAS CHO NÉT =====
+  const dpr = window.devicePixelRatio || 1;
+  const rect = fwCanvas.getBoundingClientRect();
+
+  fwCanvas.width = rect.width * dpr;
+  fwCanvas.height = rect.height * dpr;
+
+  fwCanvas.style.width = window.innerWidth + 'px';
+  fwCanvas.style.height = window.innerHeight + 'px';
+
+  fwCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+  // ===== FIX 2: VẼ CHỮ TO + VIỀN =====
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  fwCtx.font = 'bold 55px Arial';
+  fwCtx.textAlign = 'center';      // ❗ sửa lỗi rihgt → center
+  fwCtx.textBaseline = 'middle';
+
+  // viền chữ
+  fwCtx.lineWidth = 4;
+  fwCtx.strokeStyle = '#000';
+  fwCtx.strokeText(text, centerX, centerY);
+
+  // ruột chữ
+  fwCtx.fillStyle = '#fff';
+  fwCtx.fillText(text, centerX, centerY);
+
+  const colors = ['#fde047', '#facc15', '#fb7185', '#38bdf8'];
+
+  // giữ chữ 2 giây rồi nổ
+  setTimeout(() => {
+    explodeText();
+  }, 500);
+
+  // ===== 3. HÀM NỔ CHỮ =====
+  function explodeText() {
+    const img = fwCtx.getImageData(0, 0, fwCanvas.width, fwCanvas.height);
+    const particles = [];
+
+    for (let y = 0; y < img.height; y += 3) {
+      for (let x = 0; x < img.width; x += 3) {
+        const i = (y * img.width + x) * 4 + 3;
+        if (img.data[i] > 0) {
+          particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10,
+            life: 350,
+            alpha: 1,
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }
+      }
+    }
+
+    animate(particles);
+  }
+
+  // ===== 4. ANIMATE PHÁO HOA =====
+  function animate(particles) {
+    fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+    particles.forEach(p => {
+      if (p.life <= 0) return;
+
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.015;
+      p.life--;
+      p.alpha = p.life / 200;
+
+      fwCtx.globalAlpha = p.alpha;
+      fwCtx.fillStyle = p.color;
+      fwCtx.fillRect(p.x, p.y, 2, 2); // 👈 nhỏ lại cho nét
+    });
+
+    fwCtx.globalAlpha = 1;
+
+    if (particles.some(p => p.life > 0)) {
+      requestAnimationFrame(() => animate(particles));
+    } else {
+      fwCanvas.style.display = 'none';
+    }
+  }
+}
+
+
+</script>
+<script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    document.addEventListener('keydown', function (e) {
+      // Ctrl+U
+      if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+      }
+
+      // Ctrl+U
+      if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) {
+        e.preventDefault();
+      }
+
+      // Ctrl+Shift+I
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+      }
+
+      // Ctrl+Shift+C
+      if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+        e.preventDefault();
+      }
+
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+      }
+    });
+</script>
+<script>
+
+  const BASE = '/raffle';
+  const fakePath = '/event/2026/round/ef322c79-0092-4ef2-8490-8505d9e58465?member=80&gdb=1&gn1=2&gn2=2&gb=3&g4=3&g5=5';
+
+  if (location.pathname !== BASE) {
+    history.replaceState({}, '', BASE);
+  }
+
+  window.addEventListener('load', () => {
+    history.replaceState({}, '', BASE + fakePath);
+  });
+
+  window.addEventListener('load', () => {
+    if (window.location.pathname !== '/raffle' + fakePath) {
+      history.pushState({}, '', '/raffle' + fakePath);
+    }
+  });
+
+</script>
+
+</body>
+</html>
