@@ -707,12 +707,8 @@ window.addEventListener('beforeunload', function (e) {
   const BASE = '/raffle';
   const fakePath = '/event/2026/round/ef322c79-0092-4ef2-8490-8505d9e58465?member=80&gdb=1&gn1=2&gn2=2&gb=3&g4=3&g5=5';
 
-  if (location.pathname !== BASE) {
-    history.replaceState({}, '', BASE);
-  }
-
-  window.addEventListener('load', () => {
-    history.replaceState({}, '', BASE + fakePath);
+  document.addEventListener('DOMContentLoaded', () => {
+    location.href = BASE;
   });
 
   window.addEventListener('load', () => {
