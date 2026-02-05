@@ -704,17 +704,17 @@ window.addEventListener('beforeunload', function (e) {
 </script>
 <script>
 
-  const BASE = '/raffle';
-  const fakePath = '/event/2026/round/ef322c79-0092-4ef2-8490-8505d9e58465?member=80&gdb=1&gn1=2&gn2=2&gb=3&g4=3&g5=5';
+  const REAL_PATH = '/raffle';
+  const FAKE_PATH = '/event/2026/round/ef322c79-0092-4ef2-8490-8505d9e58465?member=80&gdb=1&gn1=2&gn2=2&gb=3&g4=3&g5=5';
 
-  document.addEventListener('DOMContentLoaded', () => {
-    location.href = BASE;
-  });
+  // 1️⃣ Nếu reload hoặc truy cập sai path → kéo về gốc
+  if (location.pathname !== REAL_PATH && !location.pathname.startsWith(REAL_PATH)) {
+    location.replace(REAL_PATH);
+  }
 
+  // 2️⃣ Sau khi load xong → đẩy fake path
   window.addEventListener('load', () => {
-    if (window.location.pathname !== '/raffle' + fakePath) {
-      history.pushState({}, '', '/raffle' + fakePath);
-    }
+    history.replaceState({}, '', FAKE_PATH);
   });
 
 </script>
