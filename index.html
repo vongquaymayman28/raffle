@@ -111,7 +111,7 @@
     .history {
       margin-top: 12px;
       font-size: 14px;
-      max-height: 120px;
+      max-height: 200px;
       overflow-y: auto;
       background: rgba(0,0,0,0.2);
       padding: 10px;
@@ -144,7 +144,6 @@
       <option value="Giải Ba">🥉 Giải Ba</option>
       <option value="Giải Nhì">🥈 Giải Nhì</option>
       <option value="Giải Nhất">🥇 Giải Nhất</option>
-      <option value="Giải Đặc Biệt">🏆 Giải Đặc Biệt</option>
     </select>
 
     <button id="spinBtn">🎡 QUAY</button>
@@ -307,8 +306,7 @@ let hasData = false; // có dữ liệu quay chưa
 
 // ===== CẤU HÌNH SỐ LƯỢNG GIẢI =====
 const PRIZE_LIMITS = {
-  'Giải Đặc Biệt': 1,
-  'Giải Nhất': 2,
+  'Giải Nhất': 3,
   'Giải Nhì': 3,
   'Giải Ba': 4
 };
@@ -427,7 +425,7 @@ function spin() {
   spinBtn.disabled = true;
   resultEl.textContent = 'Đang quay...';
   document.querySelector('#app > div:nth-child(1)').style.display = 'none';
-  if (prize === "Giải Đặc Biệt") {
+  if (prize === "Giải Nhất") {
     spinSound.pause();
     spinSoundSpec.currentTime = 0;
     spinSoundSpec.play();
@@ -439,7 +437,7 @@ function spin() {
   }
 
   let spinTime = 0;
-  if (prize === "Giải Đặc Biệt") {
+  if (prize === "Giải Nhất") {
      spinTime = 12000 + Math.random() * 2000; // 10–12 giây
   }
   else 
@@ -454,15 +452,15 @@ function spin() {
   //const target = startAngle + Math.PI * 10 + Math.random() * Math.PI * 2;
 
   // ===== CHỈ ĐỊNH NGƯỜI TRÚNG =====
-  const forcedName3 = 'Nguyễn Thị Giang'; // hoặc null nếu quay random
+  const forcedName2 = 'Nguyễn Thị Giang'; // hoặc null nếu quay random
   let target=0;
   let targetSpec=0;
   let target1=0;
   let target2=0;
 
   try {
-    if (forcedName3 && names.includes(forcedName3)) {
-      const index = names.indexOf(forcedName3);
+    if (forcedName2 && names.includes(forcedName2)) {
+      const index = names.indexOf(forcedName2);
       const slice = (2 * Math.PI) / names.length;
       const sliceCenter = index * slice + slice / 2;
       const spins = 10;
@@ -470,7 +468,7 @@ function spin() {
       target2 = startAngle +  spins * 2 * Math.PI +  (2 * Math.PI - sliceCenter - Math.PI / 2);
     }
     let next = true;
-    if (prize === "Giải Ba" && prizeCount["Giải Ba"] === 2) {
+    if (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 1) {
         target = target2;
     }
     else 
@@ -645,7 +643,7 @@ window.addEventListener('beforeunload', function (e) {
 
 
 </script>
- <script>
+<script>
     document.addEventListener('contextmenu', e => e.preventDefault());
 
     document.addEventListener('keydown', function (e) {
@@ -674,7 +672,7 @@ window.addEventListener('beforeunload', function (e) {
         e.preventDefault();
       }
     });
-</script> 
+</script>
 <script>
 
   const BASE = '/raffle';
