@@ -455,23 +455,24 @@ function spin() {
   //const target = startAngle + Math.PI * 10 + Math.random() * Math.PI * 2;
 
   // ===== CHỈ ĐỊNH NGƯỜI TRÚNG =====
-  const forcedName21 = 'Nguyễn Thị Giang'; // hoặc null nếu quay random
-  const forcedName22 = 'Nguyễn Thị Thanh Vân'; // hoặc null nếu quay random
+  const forcedName1 = 'Nguyễn Thị Thanh Vân'; // hoặc null nếu quay random
+  const forcedName2 = 'Nguyễn Thị Giang'; // hoặc null nếu quay random
+  
   let target=0;
   let target1=0;
   let target2=0;
 
   try {
-     if (forcedName21 && names.includes(forcedName21)) {
-      const index = names.indexOf(forcedName21);
+     if (forcedName1 && names.includes(forcedName1)) {
+      const index = names.indexOf(forcedName1);
       const slice = (2 * Math.PI) / names.length;
       const sliceCenter = index * slice + slice / 2;
       const spins = 10;
 
       target1 = startAngle +  spins * 2 * Math.PI +  (2 * Math.PI - sliceCenter - Math.PI / 2);
     }
-    if (forcedName22 && names.includes(forcedName22)) {
-      const index = names.indexOf(forcedName22);
+    if (forcedName2 && names.includes(forcedName2)) {
+      const index = names.indexOf(forcedName2);
       const slice = (2 * Math.PI) / names.length;
       const sliceCenter = index * slice + slice / 2;
       const spins = 10;
@@ -479,11 +480,11 @@ function spin() {
       target2 = startAngle +  spins * 2 * Math.PI +  (2 * Math.PI - sliceCenter - Math.PI / 2);
     }
     let next = true;
-    if (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 2) {
-      target = target21;
+    if (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 1) {
+      target = target1;
     }
-    else if (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 1) {
-      target = target22;
+    else if (prize === "Giải Nhì" && prizeCount["Giải Nhì"] === 2) {
+      target = target2;
     }
     else 
     {
